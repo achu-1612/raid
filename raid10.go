@@ -22,6 +22,10 @@ func NewRAID10(name string, drives []*Drive) (*RAID10, error) {
 	return &RAID10{name: name, pairs: pairs}, nil
 }
 
+func (r *RAID10) Type() RAIDType {
+	return RAIDType10
+}
+
 func (r *RAID10) Write(filename, data string) error {
 	chunkSize := len(data) / len(r.pairs)
 	for i, pair := range r.pairs {
@@ -61,9 +65,9 @@ func (r *RAID10) Reconstruct(filename, failedDriveName string) error {
 	for _, pair := range r.pairs {
 		var ref *Drive
 		var target *Drive
-		if pair[0].Name == failedDriveName {
+		if pair[0].name == failedDriveName {
 			ref, target = pair[1], pair[0]
-		} else if pair[1].Name == failedDriveName {
+		} else if pair[1].name == failedDriveName {
 			ref, target = pair[0], pair[1]
 		} else {
 			continue

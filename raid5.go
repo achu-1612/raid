@@ -18,6 +18,10 @@ func NewRAID5(name string, drives []*Drive) (*RAID5, error) {
 	return &RAID5{name: name, drives: drives}, nil
 }
 
+func (r *RAID5) Type() RAIDType {
+	return RAIDType5
+}
+
 func (r *RAID5) Write(filename, data string) error {
 	n := len(r.drives)
 	chunkSize := len(data) / (n - 1)
@@ -72,7 +76,7 @@ func (r *RAID5) Reconstruct(filename, failedDriveName string) error {
 	parity := byte(0)
 	parityDrive := len(filename) % n
 	for i, d := range r.drives {
-		if d.Name == failedDriveName {
+		if d.name == failedDriveName {
 			missingIndex = i
 			continue
 		}

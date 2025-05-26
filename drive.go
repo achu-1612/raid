@@ -3,7 +3,6 @@ package raid
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"sync"
@@ -13,10 +12,10 @@ const baseDir = "./vfs"
 
 // Drive represents a virtual file system
 type Drive struct {
-	Name   string
-	Path   string
+	name   string
+	path   string
 	lock   sync.RWMutex
-	Failed bool
+	failed bool
 }
 
 func createDrive(name string) (*Drive, error) {
@@ -24,10 +23,10 @@ func createDrive(name string) (*Drive, error) {
 	if err := os.MkdirAll(drivePath, 0755); err != nil {
 		return nil, err
 	}
-	return &Drive{Name: name, Path: drivePath}, nil
+	return &Drive{name: name, path: drivePath}, nil
 }
 
-func createDrivesForRAID(raidType rType) ([]*Drive, error) {
+func createDrivesForRAID(name string, raidType RAIDType) ([]*Drive, error) {
 	var count int
 	switch raidType {
 	case RAIDType0:
@@ -46,18 +45,9 @@ func createDrivesForRAID(raidType rType) ([]*Drive, error) {
 		return nil, fmt.Errorf("unsupported raid type: %s", raidType)
 	}
 
-	// Generate a random starting letter from 'a' to 'v' to allow room
-	baseRune := rune('a' + rand.Intn(22)) // avoid going past 'z'
-
 	var drives []*Drive
-
 	for i := 0; i < count; i++ {
-		driveLetter := rune(int(baseRune) + i)
-		if driveLetter > 'z' {
-			return nil, errors.New("ran out of drive letters")
-		}
-
-		name := fmt.Sprintf("sd%c", driveLetter)
+		name := fmt.Sprintf("%s%d", name, i)
 
 		drive, err := createDrive(name)
 		if err != nil {
@@ -71,29 +61,41 @@ func createDrivesForRAID(raidType rType) ([]*Drive, error) {
 }
 
 func (d *Drive) WriteFile(filename, data string) error {
-	if d.Failed {
+	if d.failed {
 		return errors.New("drive failed")
 	}
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	return os.WriteFile(filepath.Join(d.Path, filename), []byte(data), 0644)
+	return os.WriteFile(filepath.Join(d.path, filename), []byte(data), 0644)
 }
 
 func (d *Drive) ReadFile(filename string) (string, error) {
-	if d.Failed {
+	if d.failed {
 		return "", errors.New("drive failed")
 	}
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	data, err := os.ReadFile(filepath.Join(d.Path, filename))
+	data, err := os.ReadFile(filepath.Join(d.path, filename))
 	return string(data), err
 }
 
 func (d *Drive) Exists(filename string) bool {
-	_, err := os.Stat(filepath.Join(d.Path, filename))
+	_, err := os.Stat(filepath.Join(d.path, filename))
 	return err == nil
 }
 
 func (d *Drive) Recreate() error {
-	return os.MkdirAll(d.Path, 0755)
+	return os.MkdirAll(d.path, 0755)
+}
+
+func (d *Drive) Name() string {
+	return d.name
+}
+
+func drivesToString(drives []*Drive) []string {
+	var names []string
+	for _, drive := range drives {
+		names = append(names, drive.Name())
+	}
+	return names
 }

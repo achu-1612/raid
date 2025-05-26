@@ -18,6 +18,10 @@ func NewRAID0(name string, drives []*Drive) (*RAID0, error) {
 	return &RAID0{name: name, drives: drives}, nil
 }
 
+func (r *RAID0) Type() RAIDType {
+	return RAIDType0
+}
+
 func (r *RAID0) Write(filename, data string) error {
 	chunkSize := len(data) / len(r.drives)
 	for i, d := range r.drives {

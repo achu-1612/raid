@@ -6,6 +6,7 @@ type RAID interface {
 	Read(filename string) (string, error)
 	Name() string
 	Reconstruct(filename, failedDriveName string) error
+	Type() RAIDType
 }
 
 // Storage interface defines the methods for storage operations
@@ -19,17 +20,17 @@ type Storage interface {
 }
 
 // rType represents the type of RAID
-type rType string
+type RAIDType string
 
 // Supported RAID types
 const (
-	RAIDType0  rType = "raid0"
-	RAIDType1  rType = "raid1"
-	RAIDType5  rType = "raid5"
-	RAIDType10 rType = "raid10"
+	RAIDType0  RAIDType = "RAID0"
+	RAIDType1  RAIDType = "RAID1"
+	RAIDType5  RAIDType = "RAID5"
+	RAIDType10 RAIDType = "RAID10"
 )
 
-func (r rType) IsValid() bool {
+func (r RAIDType) IsValid() bool {
 	switch r {
 	case RAIDType0, RAIDType1, RAIDType5, RAIDType10:
 		return true

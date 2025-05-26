@@ -15,6 +15,10 @@ func NewRAID1(name string, drives []*Drive) (*RAID1, error) {
 	return &RAID1{name: name, drives: drives}, nil
 }
 
+func (r *RAID1) Type() RAIDType {
+	return RAIDType1
+}
+
 func (r *RAID1) Write(filename, data string) error {
 	for _, d := range r.drives {
 		if err := d.WriteFile(filename, data); err != nil {
@@ -53,7 +57,7 @@ func (r *RAID1) Reconstruct(filename, failedDriveName string) error {
 		return errors.New("no source to reconstruct from")
 	}
 	for _, d := range r.drives {
-		if d.Name == failedDriveName {
+		if d.name == failedDriveName {
 			d.Recreate()
 			return d.WriteFile(filename, refData)
 		}
